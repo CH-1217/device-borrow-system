@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>部门管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; }
+  .topbar { background: #001529; color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 17px; font-weight: 500; }
+  .topbar a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; margin-right: 16px; }
+  .topbar a:hover { color: #fff; }
+  .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card-header { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; }
+  .dept-list { display: flex; flex-direction: column; gap: 10px; }
+  .dept-item { display: flex; align-items: center; padding: 12px 16px; border: 1px solid #f0f0f0; border-radius: 8px; }
+  .dept-item .name { flex: 1; font-size: 14px; color: #333; }
+  .dept-item .count { font-size: 12px; color: #aaa; margin-right: 12px; }
+  .dept-item .del-btn { color: #e74c3c; cursor: pointer; font-size: 13px; padding: 4px 8px; border-radius: 4px; border: none; background: none; }
+  .dept-item .del-btn:hover { background: #ffe6e6; }
+  .add-row { display: flex; gap: 10px; margin-top: 16px; }
+  .add-row input { flex: 1; padding: 9px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+  .add-row button { padding: 9px 20px; background: #0052d9; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  .add-row button:hover { background: #003bb3; }
+  .msg { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-top: 12px; display: none; }
+  .msg.show { display: block; }
+  .msg-success { background: #e6f7e6; color: #1a6e2e; border: 1px solid #b8dab8; }
+  .msg-error { background: #fff0e6; color: #a0522d; border: 1px solid #ffd4b3; }
+  .empty { text-align: center; color: #aaa; padding: 30px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🖥️ 设备借用管理后台</h1>
+  <nav>
+    <a href="/admin">📊 数据总览</a>
+    <a href="/admin/devices">📋 设备台账</a>
+    <a href="/admin/departments" style="color:#fff">🏢 部门管理</a>
+    <a href="/admin/system">⚙️ 系统管理</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">🏢 部门管理</div>
+    <div id="msgBox"></div>
+
+    <div class="dept-list" id="deptList">
+      {% if departments %}
+      {% for dept in departments %}
+      <div class="dept-item" data-name="{{ dept }}">
+        <input type="text" class="name dept-name-input" value="{{ dept }}" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:8px 12px;font-size:14px;display:none" onkeydown="if(event.key==='Enter')saveDept('{{ dept }}', this.value)">
+        <span class="name dept-name-text">{{ dept }}</span>
+        <button class="edit-btn" onclick="toggleEdit(this, '{{ dept }}')" style="margin-right:8px;color:#0052d9;cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px;border:none;background:none">✏️</button>
+        <button class="save-btn" onclick="saveDept('{{ dept }}', this.closest('.dept-item').querySelector('.dept-name-input').value)" style="margin-right:8px;color:#34a853;cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px;border:none;background:none;display:none">✔</button>
+        <button class="del-btn" onclick="deleteDept('{{ dept }}')">🗑</button>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty">暂无部门，请添加</div>
+      {% endif %}
+    </div>
+
+    <div class="add-row">
+      <input type="text" id="newDeptName" placeholder="输入新部门名称" onkeydown="if(event.key==='Enter')addDept()">
+      <button onclick="addDept()">+ 添加部门</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 30分钟无操作登出心跳
+var lastActive = Date.now();
+function pingActive() {
+  if (Date.now() - lastActive < 25*60*1000) {
+    fetch('/admin/last-active', {method:'POST', credentials:'same-origin'}).catch(()=>{});
+  }
+}
+setInterval(pingActive, 5*60*1000);
+document.addEventListener('mousemove', () => lastActive = Date.now());
+document.addEventListener('keydown', () => lastActive = Date.now());
+
+function showMsg(text, type) {
+  var el = document.getElementById('msgBox');
+  el.textContent = text;
+  el.className = 'msg show msg-' + type;
+  setTimeout(() => { el.className = 'msg'; }, 4000);
+}
+
+function addDept() {
+  var name = document.getElementById('newDeptName').value.trim();
+  if (!name) { showMsg('请输入部门名称', 'error'); return; }
+  fetch('/api/departments/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showMsg('添加成功', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showMsg(res.message || '添加失败', 'error');
+    }
+  });
+}
+
+function toggleEdit(btn, oldName) {
+  var item = btn.closest('.dept-item');
+  var textEl = item.querySelector('.dept-name-text');
+  var inputEl = item.querySelector('.dept-name-input');
+  var saveBtn = item.querySelector('.save-btn');
+  if (inputEl.style.display === 'none') {
+    textEl.style.display = 'none';
+    inputEl.style.display = 'block';
+    inputEl.focus();
+    saveBtn.style.display = 'inline-block';
+    btn.textContent = '✏️';
+  } else {
+    textEl.style.display = 'block';
+    inputEl.style.display = 'none';
+    saveBtn.style.display = 'none';
+    inputEl.value = oldName;
+  }
+}
+
+function saveDept(oldName, newName) {
+  newName = newName.trim();
+  if (!newName) { showMsg('部门名称不能为空', 'error'); return; }
+  if (newName === oldName) {
+    var item = document.querySelector('.dept-item[data-name="' + oldName + '"]');
+    item.querySelector('.dept-name-text').style.display = 'block';
+    item.querySelector('.dept-name-input').style.display = 'none';
+    item.querySelector('.save-btn').style.display = 'none';
+    return;
+  }
+  fetch('/api/departments/update', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({old_name: oldName, new_name: newName})
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showMsg('修改成功', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showMsg(res.message || '修改失败', 'error');
+    }
+  });
+}
+
+function deleteDept(name) {
+  if (!confirm('确定要删除部门「' + name + '」吗？')) return;
+  fetch('/api/departments/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name})
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showMsg('删除成功', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showMsg(res.message || '删除失败', 'error');
+    }
+  });
+}
+</script>
+</body>
+</html>

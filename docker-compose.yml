@@ -1,0 +1,18 @@
+services:
+  borrow-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: borrow-system:latest
+    container_name: borrow-system
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - /vol1/1001/itzcgl/borrow_data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      # 【重要】二维码访问地址！改成你的局域网IP
+      # 手机扫码后访问的地址必须是这个IP，不是容器内部IP
+      # 例如： http://192.168.1.100:5000
+      - QR_BASE_URL=http://你的局域网IP:5000

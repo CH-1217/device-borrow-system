@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ device['设备名称'] }} - 借用/归还</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: #fff; border-radius: 16px; padding: 32px 28px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  h2 { font-size: 20px; color: #1a1a1a; margin-bottom: 6px; }
+  .device-id { font-size: 13px; color: #aaa; margin-bottom: 24px; }
+  .btn { display: block; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; text-decoration: none; text-align: center; }
+  .btn-borrow { background: #0052d9; color: #fff; }
+  .btn-return { background: #34a853; color: #fff; }
+  .btn:hover { opacity: 0.9; }
+  .footer { margin-top: 20px; font-size: 12px; color: #bbb; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>{{ device['设备名称'] }}</h2>
+  <div class="device-id">编号：{{ device_id }}</div>
+  <a href="/borrow?dev={{ device_id }}" class="btn btn-borrow">📱 借用登记</a>
+  <a href="/return?dev={{ device_id }}" class="btn btn-return">🔄 归还登记</a>
+  <div class="footer">{{ device['位置'] }}</div>
+</div>
+</body>
+</html>

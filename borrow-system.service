@@ -1,0 +1,20 @@
+[Unit]
+Description=Device Borrow System
+After=network.target
+
+[Service]
+Type=simple
+User=system
+# [BUG修复#19] 工作目录改为持久化路径，避免 /tmp 被系统清理
+WorkingDirectory=/opt/borrow_system
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 /opt/borrow_system/app.py
+Restart=always
+RestartSec=5
+
+# 日志输出到 systemd journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

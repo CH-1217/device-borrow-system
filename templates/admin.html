@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备借用管理后台</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; }
+  .topbar { background: #001529; color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 17px; font-weight: 500; }
+  .topbar .time { font-size: 13px; color: rgba(255,255,255,0.65); }
+  .topbar a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; margin-right: 16px; }
+  .topbar a:hover { color: #fff; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .stat-card .label { font-size: 13px; color: #888; margin-bottom: 8px; }
+  .stat-card .value { font-size: 32px; font-weight: 700; }
+  .stat-card .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+  .stat-card.danger .value { color: #e67e22; }
+  .stat-card.green .value { color: #34a853; }
+  .stat-card.blue .value { color: #0052d9; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card-header { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; border-bottom: 1px solid #f0f0f0; padding-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .card-header .add-dept { font-size: 12px; color: #0052d9; cursor: pointer; text-decoration: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; background: #fafafa; color: #666; border-bottom: 1px solid #f0f0f0; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #333; }
+  tr:hover td { background: #f5f7ff; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .tag-green { background: #e6f7e6; color: #1a6e2e; }
+  .tag-blue { background: #e8f0ff; color: #0052d9; }
+  .tag-orange { background: #fff0e6; color: #a0522d; }
+  .tag-gray { background: #f5f5f5; color: #666; }
+  .device-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .device-item { border: 1px solid #f0f0f0; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+  .device-item:hover { border-color: #0052d9; box-shadow: 0 2px 8px rgba(0,82,217,0.15); }
+  .device-item .name { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  .device-item .info { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .device-item .status { font-size: 12px; }
+  .device-item.borrowed { border-color: #ffe0b3; background: #fffaf0; }
+  .device-item.overdue { border-color: #ffbb77; background: #fff3e0; }
+  .device-item.idle { border-color: #e0e0e0; }
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+  .empty { text-align: center; color: #aaa; padding: 30px; font-size: 14px; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 28px; width: 400px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+  .modal h3 { font-size: 16px; margin-bottom: 20px; color: #1a1a1a; }
+  .modal .device-info { background: #f5f7ff; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #333; }
+  .modal .device-info .dev-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+  .form-row input, .form-row select { width: 100%; padding: 9px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; }
+  .form-row input:focus, .form-row select:focus { border-color: #0052d9; }
+  .modal-btns { display: flex; gap: 12px; margin-top: 20px; }
+  .modal-btns button { flex: 1; padding: 11px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-borrow { background: #0052d9; color: #fff; }
+  .btn-return { background: #34a853; color: #fff; }
+  .btn-cancel { background: #f0f0f0; color: #333; }
+  .msg { padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-top: 10px; display: none; }
+  .msg.show { display: block; }
+  .msg-success { background: #e6f7e6; color: #1a6e2e; }
+  .msg-error { background: #fff0e6; color: #a0522d; }
+  .form-row.hidden { display: none; }
+  .required-star { color: #e74c3c; margin-left: 2px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🖥️ 设备借用管理后台</h1>
+  <nav>
+    <a href="/admin" style="color:#fff">📊 数据总览</a>
+    <a href="/admin/system">⚙️ 系统管理</a>
+  </nav>
+</div>
+
+<div class="container">
+  <!-- 统计卡片 -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="label">设备总数</div>
+      <div class="value">{{ stats.total_devices }}</div>
+      <div class="sub">台</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="label">当前借用中</div>
+      <div class="value">{{ stats.borrowed_now }}</div>
+      <div class="sub">台</div>
+    </div>
+    <div class="stat-card green">
+      <div class="label">历史借用次数</div>
+      <div class="value">{{ stats.total_records }}</div>
+      <div class="sub">次</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="label">超期未还</div>
+      <div class="value">{{ stats.overdue_count }}</div>
+      <div class="sub">台</div>
+    </div>
+  </div>
+
+  <!-- 导出记录区块 -->
+  <div class="card" style="margin-bottom:16px;padding:12px 16px;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-weight:bold;font-size:14px;">📥 导出记录：</span>
+      <label style="font-size:13px;">时间范围
+        <select id="export-range" style="margin-left:4px;padding:4px 8px;border-radius:4px;border:1px solid #ccc;">
+          <option value="all">全部</option>
+          <option value="week">近7天</option>
+          <option value="month">近30天</option>
+        </select>
+      </label>
+      <label style="font-size:13px;">状态
+        <select id="export-status" style="margin-left:4px;padding:4px 8px;border-radius:4px;border:1px solid #ccc;">
+          <option value="all">全部</option>
+          <option value="borrowed">借用中</option>
+          <option value="returned">已归还</option>
+        </select>
+      </label>
+      <button onclick="doExport()" style="padding:6px 16px;background:#3498db;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;">导出 CSV</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="left-col">
+      {% if overdue %}
+      <div class="card">
+        <div class="card-header" style="color:#e67e22">🚨 超期未还预警（共 {{ overdue|length }} 台）</div>
+        <table>
+          <thead><tr><th>设备</th><th>借用人</th><th>部门</th><th>手机号</th><th>超期天数</th></tr></thead>
+          <tbody>
+          {% for d in overdue %}
+          <tr>
+            <td>{{ d['设备名称'] }}</td>
+            <td>{{ d['当前借用人'] }}</td>
+            <td>{{ d['借用部门'] }}</td>
+            <td>{{ d.get('手机号', '—') }}</td>
+            <td><span class="tag tag-orange">⚠️ 逾期 {{ d.get('超期天数', '') }}天</span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- 设备状态列表（可点击） -->
+      <div class="card">
+        <div class="card-header">📋 当前设备状态<span style="font-weight:400;font-size:12px;color:#aaa;margin-left:8px">点击设备直接登记借出/归还</span></div>
+        <div class="device-list" id="deviceList">
+          {% for d in devices %}
+          <div class="device-item {% if d['状态'] == '借用中' %}{% if d['预计归还'] and d['预计归还'].split(' ')[0] < stats.now_str %}overdue{% else %}borrowed{% endif %}{% else %}idle{% endif %}"
+               data-device-id="{{ d['设备编号'] }}"
+               data-device-name="{{ d['设备名称'] }}"
+               data-device-status="{{ d['状态'] }}"
+               data-borrower="{{ d.get('当前借用人','') }}"
+               data-phone="{{ d.get('手机号','') }}"
+               data-dept="{{ d.get('借用部门','') }}"
+               data-borrow-time="{{ d.get('借用时间','') }}"
+               data-expected="{{ d.get('预计归还','') }}"
+               onclick="openDeviceModal(this)">
+            <div class="name">{{ d['设备名称'] }}</div>
+            <div class="info">{% if d['位置'] %}{{ d['位置'] }}{% else %}位置未知{% endif %}</div>
+            <div class="status">
+              {% if d['状态'] == '借用中' %}
+                <span class="tag tag-orange">{{ d['当前借用人'] }}</span>
+                <div style="margin-top:4px;font-size:11px;color:#e67e22">⏰ {{ d['预计归还'] }}</div>
+              {% else %}
+                <span class="tag tag-green">空闲</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card">
+        <div class="card-header">📊 部门借用次数 TOP10</div>
+        <div id="deptChartContainer">
+          <canvas id="deptChart" height="200"></canvas>
+        </div>
+        <div id="deptChartEmpty" class="empty" style="display:none;padding:60px 30px;">
+          <div style="font-size:48px;color:#ddd;margin-bottom:16px;">📊</div>
+          <div style="color:#999;font-size:14px;">暂无数据</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📊 各设备借用次数</div>
+        <div id="deviceChartContainer">
+          <canvas id="deviceChart" height="160"></canvas>
+        </div>
+        <div id="deviceChartEmpty" class="empty" style="display:none;padding:60px 30px;">
+          <div style="font-size:48px;color:#ddd;margin-bottom:16px;">📈</div>
+          <div style="color:#999;font-size:14px;">暂无数据</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 最近借用记录 -->
+  <div class="card">
+    <div class="card-header">📝 最近借用记录</div>
+    <table>
+      <thead><tr><th>设备</th><th>借用人</th><th>部门</th><th>借用时间</th><th>预计归还</th><th>实际归还</th><th>状态</th></tr></thead>
+      <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r['设备编号'] }}</td>
+        <td>{{ r['借用人'] }}</td>
+        <td>{{ r['部门'] }}</td>
+        <td>{{ r['借用时间'] }}</td>
+        <td>{% if r['预计归还'] %}{{ r['预计归还'] }}{% else %}—{% endif %}</td>
+        <td>{% if r['实际归还'] %}{{ r['实际归还'] }}{% else %}—{% endif %}</td>
+        <td>
+          {% if r['状态'] == '借用中' %}
+            <span class="tag tag-blue">借用中</span>
+          {% elif r['状态'] == '已归还' %}
+            <span class="tag tag-gray">已归还</span>
+          {% else %}
+            <span class="tag tag-orange">{{ r['状态'] }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      {% if not records %}
+      <tr><td colspan="7"><div class="empty">暂无借用记录</div></td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 设备操作模态框 -->
+<div class="modal-overlay" id="deviceModal">
+  <div class="modal">
+    <h3 id="modalTitle">设备操作</h3>
+    <div class="device-info" id="modalDeviceInfo">
+      <div class="dev-name" id="modalDevName">—</div>
+      <div id="modalDevStatus" style="font-size:12px;color:#888;margin-top:2px"></div>
+    </div>
+
+    <!-- 借用表单 -->
+    <div id="borrowForm" style="display:none">
+      <div class="form-row" id="field-borrower">
+        <label id="label-borrower">借用人<span class="required-star">*</span></label>
+        <input type="text" id="modalBorrower" placeholder="请输入借用人姓名" required>
+      </div>
+      <div class="form-row" id="field-dept">
+        <label id="label-dept">部门<span class="required-star">*</span></label>
+        <select id="modalDept" required>
+          <option value="">— 请选择部门 —</option>
+        </select>
+      </div>
+      <div class="form-row" id="field-phone">
+        <label id="label-phone">手机号<span class="required-star">*</span></label>
+        <input type="tel" id="modalPhone" placeholder="请输入手机号" required pattern="[0-9]{11}" maxlength="11">
+      </div>
+      <div class="form-row" id="field-borrow_time">
+        <label id="label-borrow_time">借用时间<span class="required-star">*</span></label>
+        <input type="datetime-local" id="modalBorrowTime" required>
+      </div>
+      <div class="form-row" id="field-return_time">
+        <label id="label-return_time">预计归还</label>
+        <input type="datetime-local" id="modalReturnTime">
+      </div>
+      <div class="form-row" id="field-note">
+        <label id="label-note">备注</label>
+        <input type="text" id="modalNote" placeholder="选填，如借用用途">
+      </div>
+    </div>
+
+    <!-- 归还表单（仅显示信息，确认按钮） -->
+    <div id="returnForm" style="display:none">
+      <div class="form-row">
+        <label>当前借用人</label>
+        <input type="text" id="modalReturnBorrower" readonly style="background:#f5f5f5">
+      </div>
+      <div class="form-row">
+        <label>借用部门</label>
+        <input type="text" id="modalReturnDept" readonly style="background:#f5f5f5">
+      </div>
+      <div class="form-row">
+        <label>借用时间</label>
+        <input type="text" id="modalReturnBorrowTime" readonly style="background:#f5f5f5">
+      </div>
+      <div class="form-row">
+        <label>归还时间<span class="required-star">*</span></label>
+        <input type="datetime-local" id="modalActualReturnTime" required>
+      </div>
+    </div>
+
+    <div class="msg" id="modalMsg"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-borrow" id="modalConfirmBtn" onclick="confirmModal()">确认借出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ 字段配置 ============
+var fieldConfigs = {};
+
+function applyFieldConfigs(configs) {
+  // 先隐藏所有字段
+  var allFields = ['borrower', 'dept', 'phone', 'borrow_time', 'return_time', 'note'];
+  allFields.forEach(function(key) {
+    var fieldEl = document.getElementById('field-' + key);
+    if (fieldEl) fieldEl.classList.add('hidden');
+  });
+  
+  // 再显示启用的字段
+  configs.forEach(function(c) {
+    fieldConfigs[c.field_key] = c;
+    var fieldEl = document.getElementById('field-' + c.field_key);
+    if (!fieldEl) return;
+    
+    // 显示字段
+    fieldEl.classList.remove('hidden');
+    
+    // 应用字段名称
+    var labelEl = document.getElementById('label-' + c.field_key);
+    if (labelEl) {
+      labelEl.innerHTML = c.field_name + (c.is_required ? '<span class="required-star">*</span>' : '');
+    }
+    
+    // 应用必填设置
+    var inputEl = document.getElementById(
+      c.field_key === 'dept' ? 'modalDept' :
+      c.field_key === 'borrow_time' ? 'modalBorrowTime' :
+      c.field_key === 'return_time' ? 'modalReturnTime' :
+      'modal' + c.field_key.charAt(0).toUpperCase() + c.field_key.slice(1)
+    );
+    if (inputEl) {
+      if (c.is_required) {
+        inputEl.setAttribute('required', 'required');
+      } else {
+        inputEl.removeAttribute('required');
+      }
+    }
+  });
+}
+
+// 加载字段配置
+fetch('/api/field-configs/public?form_type=borrow')
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success && res.configs) {
+      applyFieldConfigs(res.configs);
+    }
+  });
+
+// ============ 30分钟无操作登出心跳 ============
+var lastActive = Date.now();
+var idleTimeout = 25 * 60 * 1000;
+function pingActive() {
+  if (Date.now() - lastActive < idleTimeout) {
+    fetch('/admin/last-active', {method: 'POST', credentials: 'same-origin'}).catch(()=>{});
+  }
+}
+setInterval(pingActive, 5 * 60 * 1000);
+document.addEventListener('mousemove', () => lastActive = Date.now());
+document.addEventListener('keydown', () => lastActive = Date.now());
+
+// ============ 设备操作模态框 ============
+var currentMode = 'borrow'; // 'borrow' or 'return'
+var currentDeviceId = '';
+
+function openDeviceModal(el) {
+  var devId = el.dataset.deviceId;
+  var devName = el.dataset.deviceName;
+  var status = el.dataset.deviceStatus;
+  currentDeviceId = devId;
+
+  document.getElementById('modalDevName').textContent = devName;
+  document.getElementById('modalDevStatus').textContent = status === '借用中' ? '当前状态：借用中' : '当前状态：空闲';
+
+  if (status === '借用中') {
+    currentMode = 'return';
+    document.getElementById('modalTitle').textContent = '🔄 归还设备';
+    document.getElementById('borrowForm').style.display = 'none';
+    document.getElementById('returnForm').style.display = 'block';
+    document.getElementById('modalConfirmBtn').className = 'btn-return';
+    document.getElementById('modalConfirmBtn').textContent = '确认归还';
+    document.getElementById('modalReturnBorrower').value = el.dataset.borrower || '—';
+    document.getElementById('modalReturnDept').value = el.dataset.dept || '—';
+    document.getElementById('modalReturnBorrowTime').value = el.dataset.borrowTime || '—';
+    document.getElementById('modalActualReturnTime').value = new Date().toISOString().slice(0,16);
+    document.getElementById('modalPhone').value = el.dataset.phone || '';
+  } else {
+    currentMode = 'borrow';
+    document.getElementById('modalTitle').textContent = '📋 借出设备';
+    document.getElementById('borrowForm').style.display = 'block';
+    document.getElementById('returnForm').style.display = 'none';
+    document.getElementById('modalConfirmBtn').className = 'btn-borrow';
+    document.getElementById('modalConfirmBtn').textContent = '确认借出';
+    // 默认填当前时间
+    document.getElementById('modalBorrowTime').value = new Date().toISOString().slice(0,16);
+    // 加载部门列表
+    loadDepartments();
+  }
+
+  document.getElementById('modalMsg').className = 'msg';
+  document.getElementById('modalMsg').textContent = '';
+  document.getElementById('deviceModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('deviceModal').classList.remove('show');
+}
+
+function confirmModal() {
+  if (currentMode === 'borrow') {
+    var borrower = document.getElementById('modalBorrower').value.trim();
+    var dept = document.getElementById('modalDept').value.trim();
+    var borrowTime = document.getElementById('modalBorrowTime').value;
+    var returnTime = document.getElementById('modalReturnTime').value;
+    var note = document.getElementById('modalNote').value.trim();
+    var phone = document.getElementById('modalPhone').value.trim();
+
+    // 根据字段配置动态验证
+    var missingFields = [];
+    if (fieldConfigs['borrower'] && fieldConfigs['borrower'].is_enabled && fieldConfigs['borrower'].is_required && !borrower) {
+      missingFields.push('借用人');
+    }
+    if (fieldConfigs['dept'] && fieldConfigs['dept'].is_enabled && fieldConfigs['dept'].is_required && !dept) {
+      missingFields.push('部门');
+    }
+    if (fieldConfigs['borrow_time'] && fieldConfigs['borrow_time'].is_enabled && fieldConfigs['borrow_time'].is_required && !borrowTime) {
+      missingFields.push('借用时间');
+    }
+    if (fieldConfigs['phone'] && fieldConfigs['phone'].is_enabled && fieldConfigs['phone'].is_required) {
+      if (!phone || !/^1[0-9]{10}$/.test(phone)) {
+        showMsg('请填写正确的11位手机号', 'error');
+        return;
+      }
+    }
+
+    if (missingFields.length > 0) {
+      showMsg('请填写：' + missingFields.join('、'), 'error');
+      return;
+    }
+
+    fetch('/api/submit-borrow', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        device_id: currentDeviceId,
+        device_name: document.getElementById('modalDevName').textContent,
+        borrower, dept, phone, borrow_time: borrowTime,
+        return_time: returnTime, note, submit_type: '管理员手动'
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showMsg('借出成功！', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showMsg(res.message || '操作失败', 'error');
+      }
+    });
+  } else {
+    // 归还
+    fetch('/api/submit-return', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        device_id: currentDeviceId,
+        actual_return_time: document.getElementById('modalActualReturnTime').value
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        showMsg('归还成功！', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showMsg(res.message || '操作失败', 'error');
+      }
+    });
+  }
+}
+
+function showMsg(text, type) {
+  var el = document.getElementById('modalMsg');
+  el.textContent = text;
+  el.className = 'msg show msg-' + type;
+}
+
+// 加载部门列表
+function loadDepartments() {
+  fetch('/api/departments')
+    .then(r => r.json())
+    .then(res => {
+      if (res.success && res.departments) {
+        var sel = document.getElementById('modalDept');
+        // 保留第一个选项
+        sel.innerHTML = '<option value="">— 请选择部门 —</option>';
+        res.departments.forEach(function(d) {
+          var opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          sel.appendChild(opt);
+        });
+      }
+    });
+}
+
+// 点overlay关闭
+document.getElementById('deviceModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+
+// ============ 导出记录 ============
+function doExport() {
+  var range = document.getElementById('export-range').value;
+  var status = document.getElementById('export-status').value;
+  var url = '/admin/export?range=' + range + '&status=' + status;
+  window.location.href = url;
+}
+
+// ============ 图表 ============
+var deptLabels = {{ stats.dept_count | tojson | safe }}.map(function(d){return d[0]});
+var deptValues = {{ stats.dept_count | tojson | safe }}.map(function(d){return d[1]});
+var devLabels = {{ stats.device_count | tojson | safe }}.map(function(d){return d[0]});
+var devValues = {{ stats.device_count | tojson | safe }}.map(function(d){return d[1]});
+
+if (deptLabels.length > 0) {
+  new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+      labels: deptLabels,
+      datasets: [{ label: '借用次数', data: deptValues, backgroundColor: 'rgba(0,82,217,0.6)', borderRadius: 4 }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+} else {
+  // 显示空状态
+  document.getElementById('deptChartContainer').style.display = 'none';
+  document.getElementById('deptChartEmpty').style.display = 'block';
+}
+
+if (devLabels.length > 0) {
+  new Chart(document.getElementById('deviceChart'), {
+    type: 'doughnut',
+    data: {
+      labels: devLabels,
+      datasets: [{ data: devValues, backgroundColor: ['#0052d9','#34a853','#e67e22','#9b59b6','#1abc9c','#f39c12','#e74c3c','#34495e'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+  });
+} else {
+  // 显示空状态
+  document.getElementById('deviceChartContainer').style.display = 'none';
+  document.getElementById('deviceChartEmpty').style.display = 'block';
+}
+</script>
+</body>
+</html>

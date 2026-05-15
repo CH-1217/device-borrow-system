@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备台账管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; }
+  .topbar { background: #001529; color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 17px; font-weight: 500; }
+  .topbar a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; margin-right: 16px; }
+  .topbar a:hover { color: #fff; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card-header { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .btn { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  .btn-primary { background: #0052d9; color: #fff; }
+  .btn-primary:hover { background: #003bb3; }
+  .btn-danger { background: #e74c3c; color: #fff; }
+  .btn-danger:hover { background: #c0392b; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; background: #fafafa; color: #666; border-bottom: 1px solid #f0f0f0; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #333; }
+  tr:hover td { background: #f5f7ff; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .tag-green { background: #e6f7e6; color: #1a6e2e; }
+  .tag-orange { background: #fff0e6; color: #a0522d; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal.show { display: flex; }
+  .modal-content { background: #fff; border-radius: 10px; padding: 30px; width: 480px; max-width: 90%; }
+  .modal-header { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+  .form-group input { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+  .form-group input:focus { outline: none; border-color: #0052d9; }
+  .form-row { display: flex; gap: 12px; }
+  .form-row .form-group { flex: 1; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+  .msg { padding: 10px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
+  .msg-success { background: #e6f7e6; color: #1a6e2e; border: 1px solid #b8dab8; }
+  .msg-error { background: #fff0e6; color: #a0522d; border: 1px solid #ffd4b3; }
+  .empty { text-align: center; color: #aaa; padding: 40px; }
+  .search-bar { margin-bottom: 16px; }
+  .search-bar input { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🖥️ 设备借用管理后台</h1>
+  <nav>
+    <a href="/admin">📊 数据总览</a>
+    <a href="/admin/devices">📋 设备台账</a>
+    <a href="/admin/departments">🏢 部门管理</a>
+    <a href="/admin/system">⚙️ 系统管理</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="toolbar">
+      <div class="card-header" style="margin:0">📋 设备台账</div>
+      <button class="btn btn-primary" onclick="openAddModal()">+ 添加设备</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索设备编号、名称、位置..." oninput="filterDevices()">
+    </div>
+    <div id="msgBox"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>设备编号</th>
+          <th>设备名称</th>
+          <th>位置</th>
+          <th>当前状态</th>
+          <th>当前借用人</th>
+          <th>备注</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="deviceTable">
+        <tr><td colspan="7"><div class="empty">加载中...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 设备弹窗 -->
+<div class="modal" id="deviceModal">
+  <div class="modal-content">
+    <div class="modal-header" id="modalTitle">添加设备</div>
+    <div id="modalMsg"></div>
+    <input type="hidden" id="editDeviceId">
+    <div class="form-group">
+      <label>设备编号 *</label>
+      <input type="text" id="deviceId" placeholder="如：PC-01">
+    </div>
+    <div class="form-group">
+      <label>设备名称 *</label>
+      <input type="text" id="deviceName" placeholder="如：前台公用PC-01">
+    </div>
+    <div class="form-group">
+      <label>位置</label>
+      <input type="text" id="deviceLocation" placeholder="如：前台/会议室">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="deviceNote" placeholder="如：联想ThinkPad">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveDevice()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let devices = [];
+let editMode = false;
+
+function loadDevices() {
+  fetch('/api/devices')
+    .then(r => r.json())
+    .then(data => {
+      devices = data.devices || [];
+      renderTable(devices);
+    });
+}
+
+function renderTable(list) {
+  const tbody = document.getElementById('deviceTable');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty">暂无设备</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(d => `
+    <tr>
+      <td>${d['设备编号']}</td>
+      <td>${d['设备名称']}</td>
+      <td>${d['位置'] || '-'}</td>
+      <td>
+        <span class="tag ${d['状态'] === '空闲' ? 'tag-green' : 'tag-orange'}">${d['状态']}</span>
+      </td>
+      <td>${d['当前借用人'] || '-'}</td>
+      <td>${d['备注'] || '-'}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openEditModal('${d['设备编号']}')">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDevice('${d['设备编号']}')" ${d['状态'] !== '空闲' ? 'disabled style="opacity:0.4"' : ''}>删除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterDevices() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = devices.filter(d =>
+    (d['设备编号'] || '').toLowerCase().includes(q) ||
+    (d['设备名称'] || '').toLowerCase().includes(q) ||
+    (d['位置'] || '').toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
+
+function openAddModal() {
+  editMode = false;
+  document.getElementById('modalTitle').textContent = '添加设备';
+  document.getElementById('editDeviceId').value = '';
+  document.getElementById('deviceId').value = '';
+  document.getElementById('deviceId').disabled = false;
+  document.getElementById('deviceName').value = '';
+  document.getElementById('deviceLocation').value = '';
+  document.getElementById('deviceNote').value = '';
+  document.getElementById('modalMsg').innerHTML = '';
+  document.getElementById('deviceModal').classList.add('show');
+}
+
+function openEditModal(deviceId) {
+  editMode = true;
+  const d = devices.find(x => x['设备编号'] === deviceId);
+  if (!d) return;
+  document.getElementById('modalTitle').textContent = '编辑设备';
+  document.getElementById('editDeviceId').value = deviceId;
+  document.getElementById('deviceId').value = d['设备编号'];
+  document.getElementById('deviceId').disabled = true;
+  document.getElementById('deviceName').value = d['设备名称'];
+  document.getElementById('deviceLocation').value = d['位置'] || '';
+  document.getElementById('deviceNote').value = d['备注'] || '';
+  document.getElementById('modalMsg').innerHTML = '';
+  document.getElementById('deviceModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('deviceModal').classList.remove('show');
+}
+
+function showMsg(msg, isError) {
+  document.getElementById('modalMsg').innerHTML = `<div class="msg ${isError ? 'msg-error' : 'msg-success'}">${msg}</div>`;
+}
+
+function saveDevice() {
+  const data = {
+    device_id: document.getElementById('deviceId').value.trim(),
+    device_name: document.getElementById('deviceName').value.trim(),
+    location: document.getElementById('deviceLocation').value.trim(),
+    note: document.getElementById('deviceNote').value.trim()
+  };
+
+  if (!data.device_id || !data.device_name) {
+    showMsg('设备编号和名称必填', true);
+    return;
+  }
+
+  const url = editMode ? '/admin/devices/update' : '/admin/devices/add';
+  fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      showMsg(res.message, false);
+      setTimeout(() => { closeModal(); loadDevices(); }, 1000);
+    } else {
+      showMsg(res.message, true);
+    }
+  });
+}
+
+function deleteDevice(deviceId) {
+  if (!confirm(`确定删除设备 ${deviceId}？`)) return;
+  fetch('/admin/devices/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({device_id: deviceId})
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      loadDevices();
+    } else {
+      alert(res.message);
+    }
+  });
+}
+
+loadDevices();
+</script>
+<script>
+// 30分钟无操作自动登出心跳
+(function(){
+  var lastActive = Date.now();
+  var idleTimeout = 25 * 60 * 1000;
+  function ping() {
+    if (Date.now() - lastActive < idleTimeout) {
+      fetch('/admin/last-active', {method:'POST', credentials:'same-origin'}).catch(function(){});
+    }
+  }
+  setInterval(ping, 5*60*1000);
+  document.addEventListener('mousemove', function(){ lastActive = Date.now(); });
+  document.addEventListener('keydown', function(){ lastActive = Date.now(); });
+})();
+</script>
+</body>
+</html>

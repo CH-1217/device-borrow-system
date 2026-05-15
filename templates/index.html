@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备借用归还管理系统</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .header {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .header .admin-link {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    padding: 8px 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    transition: all 0.3s;
+    font-size: 14px;
+  }
+  .header .admin-link:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .hero {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 60px;
+  }
+  .hero h2 {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .hero p {
+    font-size: 18px;
+    opacity: 0.9;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+  .actions {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 60px;
+  }
+  .action-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    min-width: 200px;
+  }
+  .action-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  }
+  .action-card .icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+  .action-card h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .action-card p {
+    font-size: 14px;
+    color: #888;
+  }
+  .action-card.borrow { border-top: 4px solid #0052d9; }
+  .action-card.return { border-top: 4px solid #34a853; }
+  .action-card.qr { border-top: 4px solid #e67e22; }
+  .features {
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 40px 60px;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .features h3 {
+    font-size: 22px;
+    margin-bottom: 24px;
+    color: #333;
+    text-align: center;
+  }
+  .feature-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .feature-item .check {
+    color: #34a853;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .feature-item div {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.5;
+  }
+  .feature-item strong {
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+  }
+  @media (max-width: 768px) {
+    .hero h2 { font-size: 32px; }
+    .hero p { font-size: 16px; }
+    .action-card { padding: 30px 40px; min-width: 160px; }
+    .features { padding: 30px; }
+  }
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1>📦 设备借用归还管理系统</h1>
+    <a href="/admin/login" class="admin-link">🔐 管理后台</a>
+  </header>
+
+  <main class="main">
+    <div class="hero">
+      <h2>高效管理设备借用</h2>
+      <p>简化设备借用流程，实时追踪设备状态，让资产管理更轻松。支持扫码快速登记，一键导出报表。</p>
+    </div>
+
+    <div class="actions">
+      <a href="/borrow" class="action-card borrow">
+        <div class="icon">📋</div>
+        <h3>借用登记</h3>
+        <p>登记设备借用信息</p>
+      </a>
+      <a href="/return" class="action-card return">
+        <div class="icon">🔄</div>
+        <h3>归还登记</h3>
+        <p>登记设备归还信息</p>
+      </a>
+      <a href="/qr" class="action-card qr">
+        <div class="icon">📱</div>
+        <h3>扫码入口</h3>
+        <p>扫描二维码快速访问</p>
+      </a>
+    </div>
+
+    <div class="features">
+      <h3>✨ 系统功能</h3>
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>扫码借用/归还</strong>
+            扫描二维码快速完成借用和归还登记
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>实时状态追踪</strong>
+            随时查看设备借用状态和位置
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>超期预警提醒</strong>
+            自动识别超期未还设备并预警
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>数据统计报表</strong>
+            部门借用次数、设备使用率统计
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>记录导出</strong>
+            支持CSV格式导出借用记录
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="check">✓</span>
+          <div>
+            <strong>权限管理</strong>
+            超级管理员与操作员分级权限
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>设备借用归还管理系统 V1.0 | 让设备管理更简单</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>归还登记</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; }
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; color: #1a1a1a; margin-bottom: 4px; }
+  .header p { font-size: 13px; color: #888; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card-title { font-size: 15px; color: #333; font-weight: 600; margin-bottom: 16px; border-left: 4px solid #34a853; padding-left: 10px; }
+  .device-select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; background: #fafafa; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+  .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; transition: border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #34a853; }
+  .form-group.hidden { display: none; }
+  .btn { display: block; width: 100%; padding: 14px; background: #34a853; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .btn:hover { background: #2d9147; }
+  .btn:active { background: #248a3b; }
+  .tips { font-size: 12px; color: #999; margin-top: 12px; text-align: center; }
+  .success-msg { background: #e6f7e6; border: 1px solid #34a853; color: #1a6e2e; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  .success-msg.show { display: block; }
+  .error-msg { background: #fff0e6; border: 1px solid #e67e22; color: #a0522d; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  .error-msg.show { display: block; }
+  /* 成功弹窗 */
+  .success-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+  .success-modal.show { display: flex; }
+  .success-modal-content { background: #fff; border-radius: 16px; padding: 40px 32px; text-align: center; max-width: 320px; width: 85%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .success-modal-icon { font-size: 64px; margin-bottom: 16px; }
+  .success-modal-title { font-size: 20px; color: #1a6e2e; font-weight: 600; margin-bottom: 8px; }
+  .success-modal-text { font-size: 15px; color: #666; margin-bottom: 24px; }
+  .success-modal-btn { background: #34a853; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; padding: 14px 40px; cursor: pointer; width: 100%; }
+  .required-star { color: #e74c3c; margin-left: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔄 设备归还登记</h1>
+    <p>请如实填写归还信息</p>
+  </div>
+
+  <div class="success-msg" id="successMsg">✅ 归还成功！设备已释放。</div>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- 成功弹窗 -->
+  <div class="success-modal" id="successModal">
+    <div class="success-modal-content">
+      <div class="success-modal-icon">✅</div>
+      <div class="success-modal-title">归还成功！</div>
+      <div class="success-modal-text">设备已释放</div>
+      <button type="button" class="success-modal-btn" onclick="closeSuccessModal()">我知道了</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">归还信息</div>
+    <form id="returnForm">
+      <!-- 设备编号 -->
+      <div class="form-group" id="field-device_id">
+        <label id="label-device_id">设备编号<span class="required-star">*</span></label>
+        <select class="device-select" name="device_id" id="deviceSelect" required>
+          <option value="">— 请选择 —</option>
+          {% for dev in devices %}
+          {% if dev['状态'] == '借用中' %}
+          <option value="{{ dev['设备编号'] }}">{{ dev['设备名称'] }}（借用人：{{ dev['当前借用人'] }}）</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      
+      <!-- 归还时间 -->
+      <div class="form-group" id="field-return_time">
+        <label id="label-return_time">归还时间<span class="required-star">*</span></label>
+        <input type="datetime-local" name="return_time" id="input-return_time" required>
+      </div>
+      
+      <!-- 归还备注 -->
+      <div class="form-group" id="field-note">
+        <label id="label-note">归还备注</label>
+        <input type="text" name="note" id="input-note" placeholder="选填">
+      </div>
+      
+      <button type="submit" class="btn" id="submitBtn">确认归还</button>
+    </form>
+    <div class="tips">归还后设备状态自动更新为空闲</div>
+  </div>
+</div>
+
+<script>
+// 字段配置
+var fieldConfigs = {};
+
+// 应用字段配置
+function applyFieldConfigs(configs) {
+  configs.forEach(function(c) {
+    fieldConfigs[c.field_key] = c;
+    var fieldEl = document.getElementById('field-' + c.field_key);
+    if (!fieldEl) return;
+    
+    // 应用显示/隐藏
+    if (!c.is_enabled) {
+      fieldEl.classList.add('hidden');
+      return;
+    }
+    
+    // 应用字段名称
+    var labelEl = document.getElementById('label-' + c.field_key);
+    if (labelEl) {
+      labelEl.textContent = c.field_name;
+      if (c.is_required) {
+        labelEl.innerHTML += '<span class="required-star">*</span>';
+      }
+    }
+    
+    // 应用必填设置
+    var inputEl = document.getElementById(
+      c.field_key === 'device_id' ? 'deviceSelect' : 'input-' + c.field_key
+    );
+    if (inputEl) {
+      if (c.is_required) {
+        inputEl.setAttribute('required', 'required');
+      } else {
+        inputEl.removeAttribute('required');
+      }
+    }
+  });
+}
+
+// 加载字段配置
+fetch('/api/field-configs/public?form_type=return')
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success && res.configs) {
+      applyFieldConfigs(res.configs);
+    }
+  })
+  .catch(function() {
+    // 如果API失败，使用默认配置（保持原有行为）
+  });
+
+// 表单提交
+document.getElementById('returnForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var formData = new FormData(this);
+  
+  try {
+    var resp = await fetch('/api/submit-return', { 
+      method: 'POST',
+      body: formData
+    });
+    var data = await resp.json();
+    if (data.success) {
+      document.getElementById('successMsg').classList.add('show');
+      document.getElementById('errorMsg').classList.remove('show');
+      // 显示成功弹窗
+      document.getElementById('successModal').classList.add('show');
+      document.getElementById('deviceSelect').value = '';
+      document.getElementById('input-return_time').value = new Date().toISOString().slice(0,16);
+    } else {
+      document.getElementById('errorMsg').textContent = data.message;
+      document.getElementById('errorMsg').classList.add('show');
+      document.getElementById('successMsg').classList.remove('show');
+    }
+  } catch(err) {
+    document.getElementById('errorMsg').textContent = '提交失败，请检查网络';
+    document.getElementById('errorMsg').classList.add('show');
+  }
+});
+
+// 自动填充当前时间
+document.getElementById('input-return_time').value = new Date().toISOString().slice(0,16);
+
+// 关闭成功弹窗
+function closeSuccessModal() {
+  document.getElementById('successModal').classList.remove('show');
+}
+</script>
+</body>
+</html>
