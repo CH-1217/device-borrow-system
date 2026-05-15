@@ -44,10 +44,10 @@ def generate_qr_png(url, filename=None):
 
 
 def generate_home_qr_png(base_url=None):
-    """生成系统首页二维码"""
+    """生成系统首页二维码，跳转到扫码快速入口"""
     if base_url is None:
         base_url = get_qr_base_url()
-    return generate_qr_png(base_url)
+    return generate_qr_png(f'{base_url}/qr')
 
 
 def generate_borrow_qr_png(base_url=None):

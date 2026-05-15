@@ -3,95 +3,545 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>归还登记</title>
+<title>归还登记 - 设备借用归还管理系统</title>
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; }
-  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
-  .header { text-align: center; margin-bottom: 24px; }
-  .header h1 { font-size: 22px; color: #1a1a1a; margin-bottom: 4px; }
-  .header p { font-size: 13px; color: #888; }
-  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card-title { font-size: 15px; color: #333; font-weight: 600; margin-bottom: 16px; border-left: 4px solid #34a853; padding-left: 10px; }
-  .device-select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; background: #fafafa; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
-  .form-group { margin-bottom: 14px; }
-  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
-  .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; transition: border-color 0.2s; }
-  .form-group input:focus, .form-group select:focus { outline: none; border-color: #34a853; }
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; 
+    background: #f5f7fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 顶部导航栏 */
+  .topbar {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    transition: all 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .page-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .topbar-right {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+  }
+  
+  /* 主内容区 */
+  .main {
+    flex: 1;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .container { 
+    width: 100%;
+    max-width: 520px; 
+  }
+  
+  /* 卡片样式 */
+  .card { 
+    background: #fff; 
+    border-radius: 16px; 
+    padding: 28px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .card-title { 
+    font-size: 17px; 
+    color: #1a1a1a; 
+    font-weight: 600; 
+    margin-bottom: 24px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: #34a853;
+    border-radius: 2px;
+  }
+  
+  /* 设备选择区域 */
+  .device-select-wrapper {
+    position: relative;
+  }
+  .device-select { 
+    width: 100%; 
+    padding: 14px 40px 14px 16px; 
+    border: 2px solid #e8e8e8; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    color: #333; 
+    background: #fafafa; 
+    appearance: none; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); 
+    background-repeat: no-repeat; 
+    background-position: right 16px center; 
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .device-select:focus { 
+    outline: none; 
+    border-color: #34a853; 
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52,168,83,0.1);
+  }
+  
+  /* 当前借用信息卡片 */
+  .borrow-info-card {
+    background: linear-gradient(135deg, #fff8f0 0%, #fff0e6 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+    border: 1px solid #ffd4b3;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .borrow-info-card.show {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .borrow-info-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed #ffd4b3;
+  }
+  .device-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .borrow-info-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .borrow-info-subtitle {
+    font-size: 13px;
+    color: #666;
+    margin-top: 2px;
+  }
+  .borrow-info-list {
+    display: grid;
+    gap: 12px;
+  }
+  .borrow-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .borrow-info-label {
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .borrow-info-value {
+    color: #333;
+    font-weight: 500;
+  }
+  .overdue-badge {
+    background: #e74c3c;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  
+  /* 表单样式 */
+  .form-group { 
+    margin-bottom: 20px; 
+  }
+  .form-group label { 
+    display: block; 
+    font-size: 14px; 
+    color: #333; 
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .form-group input, .form-group select { 
+    width: 100%; 
+    padding: 14px 16px; 
+    border: 2px solid #e8e8e8; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    color: #333; 
+    transition: all 0.3s;
+    background: #fafafa;
+  }
+  .form-group input:focus, .form-group select:focus { 
+    outline: none; 
+    border-color: #34a853; 
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52,168,83,0.1);
+  }
+  .form-group input::placeholder {
+    color: #aaa;
+  }
   .form-group.hidden { display: none; }
-  .btn { display: block; width: 100%; padding: 14px; background: #34a853; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-  .btn:hover { background: #2d9147; }
-  .btn:active { background: #248a3b; }
-  .tips { font-size: 12px; color: #999; margin-top: 12px; text-align: center; }
-  .success-msg { background: #e6f7e6; border: 1px solid #34a853; color: #1a6e2e; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  
+  /* 提交按钮 */
+  .btn { 
+    display: block; 
+    width: 100%; 
+    padding: 16px; 
+    background: linear-gradient(135deg, #34a853 0%, #2d9147 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 12px; 
+    font-size: 17px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(52,168,83,0.3);
+    margin-top: 8px;
+  }
+  .btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52,168,83,0.4);
+  }
+  .btn:active { 
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(52,168,83,0.3);
+  }
+  .btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* 提示信息 */
+  .tips { 
+    font-size: 13px; 
+    color: #888; 
+    margin-top: 16px; 
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  /* 消息提示 */
+  .success-msg { 
+    background: #e6f7e6; 
+    border: 1px solid #34a853; 
+    color: #1a6e2e; 
+    padding: 16px; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    display: none; 
+    text-align: center;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
+  }
   .success-msg.show { display: block; }
-  .error-msg { background: #fff0e6; border: 1px solid #e67e22; color: #a0522d; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  .error-msg { 
+    background: #fff0e6; 
+    border: 1px solid #e67e22; 
+    color: #a0522d; 
+    padding: 16px; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    display: none; 
+    text-align: center;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
+  }
   .error-msg.show { display: block; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
   /* 成功弹窗 */
-  .success-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
-  .success-modal.show { display: flex; }
-  .success-modal-content { background: #fff; border-radius: 16px; padding: 40px 32px; text-align: center; max-width: 320px; width: 85%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-  .success-modal-icon { font-size: 64px; margin-bottom: 16px; }
-  .success-modal-title { font-size: 20px; color: #1a6e2e; font-weight: 600; margin-bottom: 8px; }
-  .success-modal-text { font-size: 15px; color: #666; margin-bottom: 24px; }
-  .success-modal-btn { background: #34a853; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; padding: 14px 40px; cursor: pointer; width: 100%; }
-  .required-star { color: #e74c3c; margin-left: 2px; }
+  .success-modal { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    display: none; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+  }
+  .success-modal.show { 
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+  .success-modal-content { 
+    background: #fff; 
+    border-radius: 20px; 
+    padding: 48px 40px; 
+    text-align: center; 
+    max-width: 360px; 
+    width: 90%; 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .success-modal-icon { 
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #34a853 0%, #2d9147 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(52,168,83,0.3);
+    animation: checkmarkPop 0.5s ease 0.2s both;
+  }
+  @keyframes checkmarkPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .success-modal-title { 
+    font-size: 22px; 
+    color: #1a6e2e; 
+    font-weight: 600; 
+    margin-bottom: 12px; 
+  }
+  .success-modal-text { 
+    font-size: 15px; 
+    color: #666; 
+    margin-bottom: 28px; 
+    line-height: 1.6;
+  }
+  .success-modal-btn { 
+    background: linear-gradient(135deg, #34a853 0%, #2d9147 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 12px; 
+    font-size: 16px; 
+    font-weight: 600; 
+    padding: 16px 40px; 
+    cursor: pointer; 
+    width: 100%;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(52,168,83,0.3);
+  }
+  .success-modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52,168,83,0.4);
+  }
+  
+  .required-star { 
+    color: #e74c3c; 
+    margin-left: 4px; 
+  }
+  
+  /* 空状态提示 */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+  }
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  .empty-state-text {
+    font-size: 14px;
+  }
+  
+  /* 页脚 */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+  }
+  
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 12px 16px;
+    }
+    .page-title {
+      font-size: 16px;
+    }
+    .main {
+      padding: 20px 16px;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 14px;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>🔄 设备归还登记</h1>
-    <p>请如实填写归还信息</p>
-  </div>
-
-  <div class="success-msg" id="successMsg">✅ 归还成功！设备已释放。</div>
-  <div class="error-msg" id="errorMsg"></div>
-
-  <!-- 成功弹窗 -->
-  <div class="success-modal" id="successModal">
-    <div class="success-modal-content">
-      <div class="success-modal-icon">✅</div>
-      <div class="success-modal-title">归还成功！</div>
-      <div class="success-modal-text">设备已释放</div>
-      <button type="button" class="success-modal-btn" onclick="closeSuccessModal()">我知道了</button>
+  <!-- 顶部导航栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="back-btn">← 返回首页</a>
+      <span class="page-title">🔄 设备归还登记</span>
     </div>
-  </div>
+    <div class="topbar-right">请如实填写归还信息</div>
+  </header>
 
-  <div class="card">
-    <div class="card-title">归还信息</div>
-    <form id="returnForm">
-      <!-- 设备编号 -->
-      <div class="form-group" id="field-device_id">
-        <label id="label-device_id">设备编号<span class="required-star">*</span></label>
-        <select class="device-select" name="device_id" id="deviceSelect" required>
-          <option value="">— 请选择 —</option>
-          {% for dev in devices %}
-          {% if dev['状态'] == '借用中' %}
-          <option value="{{ dev['设备编号'] }}">{{ dev['设备名称'] }}（借用人：{{ dev['当前借用人'] }}）</option>
-          {% endif %}
-          {% endfor %}
-        </select>
+  <main class="main">
+    <div class="container">
+      <div class="success-msg" id="successMsg">✅ 归还成功！设备已释放。</div>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- 成功弹窗 -->
+      <div class="success-modal" id="successModal">
+        <div class="success-modal-content">
+          <div class="success-modal-icon">✓</div>
+          <div class="success-modal-title">归还成功！</div>
+          <div class="success-modal-text">设备已成功归还，状态已更新为空闲<br>感谢使用，欢迎再次借用</div>
+          <button type="button" class="success-modal-btn" onclick="closeSuccessModal()">我知道了</button>
+        </div>
       </div>
-      
-      <!-- 归还时间 -->
-      <div class="form-group" id="field-return_time">
-        <label id="label-return_time">归还时间<span class="required-star">*</span></label>
-        <input type="datetime-local" name="return_time" id="input-return_time" required>
+
+      <div class="card">
+        <div class="card-title">归还信息</div>
+        <form id="returnForm">
+          <!-- 设备编号 -->
+          <div class="form-group" id="field-device_id">
+            <label id="label-device_id">选择要归还的设备<span class="required-star">*</span></label>
+            <div class="device-select-wrapper">
+              <select class="device-select" name="device_id" id="deviceSelect" required onchange="onDeviceChange()">
+                <option value="">— 请选择设备 —</option>
+                {% for dev in devices %}
+                {% if dev['状态'] == '借用中' %}
+                <option value="{{ dev['设备编号'] }}" 
+                        data-name="{{ dev['设备名称'] }}"
+                        data-borrower="{{ dev['当前借用人'] }}"
+                        data-dept="{{ dev['借用部门'] or '' }}"
+                        data-phone="{{ dev.get('手机号', '') }}"
+                        data-borrow-time="{{ dev.get('借用时间', '') }}"
+                        data-expected="{{ dev.get('预计归还', '') }}">
+                  {{ dev['设备名称'] }}（借用人：{{ dev['当前借用人'] }}）
+                </option>
+                {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- 当前借用信息卡片 -->
+            <div class="borrow-info-card" id="borrowInfoCard">
+              <div class="borrow-info-header">
+                <div class="device-icon">💻</div>
+                <div>
+                  <div class="borrow-info-title" id="infoDeviceName">—</div>
+                  <div class="borrow-info-subtitle" id="infoDeviceId">—</div>
+                </div>
+              </div>
+              <div class="borrow-info-list">
+                <div class="borrow-info-item">
+                  <span class="borrow-info-label">👤 借用人</span>
+                  <span class="borrow-info-value" id="infoBorrower">—</span>
+                </div>
+                <div class="borrow-info-item">
+                  <span class="borrow-info-label">🏢 借用部门</span>
+                  <span class="borrow-info-value" id="infoDept">—</span>
+                </div>
+                <div class="borrow-info-item">
+                  <span class="borrow-info-label">📞 联系电话</span>
+                  <span class="borrow-info-value" id="infoPhone">—</span>
+                </div>
+                <div class="borrow-info-item">
+                  <span class="borrow-info-label">📅 借用时间</span>
+                  <span class="borrow-info-value" id="infoBorrowTime">—</span>
+                </div>
+                <div class="borrow-info-item">
+                  <span class="borrow-info-label">⏰ 预计归还</span>
+                  <span class="borrow-info-value" id="infoExpected">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 归还时间 -->
+          <div class="form-group" id="field-return_time">
+            <label id="label-return_time">归还时间<span class="required-star">*</span></label>
+            <input type="datetime-local" name="return_time" id="input-return_time" required>
+          </div>
+          
+          <!-- 归还备注 -->
+          <div class="form-group" id="field-note">
+            <label id="label-note">归还备注</label>
+            <input type="text" name="note" id="input-note" placeholder="选填，如设备状况说明">
+          </div>
+          
+          <button type="submit" class="btn" id="submitBtn">确认归还</button>
+        </form>
+        <div class="tips">
+          <span>ℹ️</span>
+          <span>归还后设备状态自动更新为空闲</span>
+        </div>
       </div>
-      
-      <!-- 归还备注 -->
-      <div class="form-group" id="field-note">
-        <label id="label-note">归还备注</label>
-        <input type="text" name="note" id="input-note" placeholder="选填">
-      </div>
-      
-      <button type="submit" class="btn" id="submitBtn">确认归还</button>
-    </form>
-    <div class="tips">归还后设备状态自动更新为空闲</div>
-  </div>
-</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>设备借用归还管理系统 V1.0 | 让设备管理更简单</p>
+  </footer>
 
 <script>
 // 字段配置
@@ -140,15 +590,73 @@ fetch('/api/field-configs/public?form_type=return')
     if (res.success && res.configs) {
       applyFieldConfigs(res.configs);
     }
+    // 设置归还时间为当前时间
+    setCurrentTime('input-return_time');
   })
   .catch(function() {
     // 如果API失败，使用默认配置（保持原有行为）
   });
 
+// 设置时间为当前时间
+function setCurrentTime(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) {
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var hours = String(now.getHours()).padStart(2, '0');
+    var minutes = String(now.getMinutes()).padStart(2, '0');
+    input.value = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+  }
+}
+
+// 设备选择变化时更新借用信息
+function onDeviceChange() {
+  var select = document.getElementById('deviceSelect');
+  var infoCard = document.getElementById('borrowInfoCard');
+  var option = select.options[select.selectedIndex];
+  
+  if (select.value) {
+    // 填充借用信息
+    document.getElementById('infoDeviceName').textContent = option.dataset.name || '未知设备';
+    document.getElementById('infoDeviceId').textContent = '设备编号: ' + select.value;
+    document.getElementById('infoBorrower').textContent = option.dataset.borrower || '—';
+    document.getElementById('infoDept').textContent = option.dataset.dept || '—';
+    document.getElementById('infoPhone').textContent = option.dataset.phone || '—';
+    document.getElementById('infoBorrowTime').textContent = option.dataset.borrowTime || '—';
+    
+    // 检查是否超期
+    var expectedTime = option.dataset.expected;
+    var expectedEl = document.getElementById('infoExpected');
+    if (expectedTime) {
+      var now = new Date();
+      var expected = new Date(expectedTime);
+      if (now > expected) {
+        var diffDays = Math.ceil((now - expected) / (1000 * 60 * 60 * 24));
+        expectedEl.innerHTML = expectedTime + ' <span class="overdue-badge">超期 ' + diffDays + ' 天</span>';
+      } else {
+        expectedEl.textContent = expectedTime;
+      }
+    } else {
+      expectedEl.textContent = '未设置';
+    }
+    
+    infoCard.classList.add('show');
+  } else {
+    infoCard.classList.remove('show');
+  }
+}
+
 // 表单提交
 document.getElementById('returnForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   var formData = new FormData(this);
+  
+  // 禁用提交按钮
+  var submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '处理中...';
   
   try {
     var resp = await fetch('/api/submit-return', { 
@@ -162,6 +670,7 @@ document.getElementById('returnForm').addEventListener('submit', async function(
       // 显示成功弹窗
       document.getElementById('successModal').classList.add('show');
       document.getElementById('deviceSelect').value = '';
+      document.getElementById('borrowInfoCard').classList.remove('show');
       document.getElementById('input-return_time').value = new Date().toISOString().slice(0,16);
     } else {
       document.getElementById('errorMsg').textContent = data.message;
@@ -171,6 +680,9 @@ document.getElementById('returnForm').addEventListener('submit', async function(
   } catch(err) {
     document.getElementById('errorMsg').textContent = '提交失败，请检查网络';
     document.getElementById('errorMsg').classList.add('show');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '确认归还';
   }
 });
 

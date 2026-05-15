@@ -279,22 +279,24 @@ def init_db():
         cur = conn.execute('SELECT COUNT(*) FROM field_configs')
         if cur.fetchone()[0] == 0:
             now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            # 借用表单字段
+            # 借用表单字段 - 按照需求文档要求的字段配置
             borrow_fields = [
                 ('device_id', 'borrow', '设备编号', 1, 1, 1),
                 ('device_name', 'borrow', '设备名称', 0, 1, 2),
-                ('borrower', 'borrow', '借用人', 1, 1, 3),
-                ('dept', 'borrow', '部门', 1, 1, 4),
-                ('phone', 'borrow', '手机号', 1, 1, 5),
+                ('borrower', 'borrow', '借用人姓名', 1, 1, 3),  # 借用人姓名(必填)
+                ('dept', 'borrow', '借用部门', 1, 1, 4),  # 借用部门(必填)
+                ('phone', 'borrow', '联系电话', 0, 1, 5),  # 联系电话(可选)
                 ('borrow_time', 'borrow', '借用时间', 1, 1, 6),
                 ('return_time', 'borrow', '预计归还', 0, 1, 7),
-                ('note', 'borrow', '备注', 0, 1, 8),
+                ('note', 'borrow', '借用用途', 1, 1, 8),  # 借用用途(必填)
             ]
-            # 归还表单字段
+            # 归还表单字段 - 按照需求文档要求的字段配置
             return_fields = [
                 ('device_id', 'return', '设备编号', 1, 1, 1),
-                ('return_time', 'return', '归还时间', 0, 1, 2),
-                ('note', 'return', '归还备注', 0, 1, 3),
+                ('return_person', 'return', '归还人姓名', 1, 1, 2),  # 归还人姓名(必填)
+                ('device_status', 'return', '设备状态', 0, 1, 3),  # 设备状态(可选)
+                ('return_time', 'return', '归还时间', 0, 1, 4),
+                ('note', 'return', '备注', 0, 1, 5),  # 备注(可选)
             ]
             all_fields = borrow_fields + return_fields
             for key, form_type, name, req, en, sort in all_fields:
@@ -534,7 +536,7 @@ def check_cookie_auth():
 # ============ 借用者页面（公开） ============
 @app.route('/')
 def index():
-    return redirect('/qr')
+    return render_template('index.html')
 
 @app.route('/borrow')
 def borrow_page():

@@ -9,10 +9,11 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - /vol1/1001/itzcgl/borrow_data:/app/data
+	#更换为实际目录
+      - /vol1/1001/borrow_data:/app/borrow_data
     environment:
       - PYTHONUNBUFFERED=1
-      # 【重要】二维码访问地址！改成你的NAS局域网IP
+      # 【重要】二维码访问地址！改成你的局域网IP
       # 手机扫码后访问的地址必须是这个IP，不是容器内部IP
-      # 例如：http://10.20.1.100:5000 或 http://192.168.1.100:5000
-      - QR_BASE_URL=http://你的NAS局域网IP:5000
+      # 例如： http://192.168.1.100:5000
+      - QR_BASE_URL=http://你的IP:5000

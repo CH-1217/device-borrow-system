@@ -3,122 +3,597 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>借用登记</title>
+<title>借用登记 - 设备借用归还管理系统</title>
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; }
-  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
-  .header { text-align: center; margin-bottom: 24px; }
-  .header h1 { font-size: 22px; color: #1a1a1a; margin-bottom: 4px; }
-  .header p { font-size: 13px; color: #888; }
-  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card-title { font-size: 15px; color: #333; font-weight: 600; margin-bottom: 16px; border-left: 4px solid #0052d9; padding-left: 10px; }
-  .device-select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; background: #fafafa; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
-  .form-group { margin-bottom: 14px; }
-  .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
-  .form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; color: #333; transition: border-color 0.2s; }
-  .form-group input:focus, .form-group select:focus { outline: none; border-color: #0052d9; }
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; 
+    background: #f5f7fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 顶部导航栏 */
+  .topbar {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    transition: all 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .page-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .topbar-right {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+  }
+  
+  /* 主内容区 */
+  .main {
+    flex: 1;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .container { 
+    width: 100%;
+    max-width: 520px; 
+  }
+  
+  /* 进度指示器 */
+  .progress-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 0 10px;
+  }
+  .progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+  }
+  .progress-step::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    z-index: 0;
+  }
+  .progress-step:last-child::after {
+    display: none;
+  }
+  .progress-step.completed::after,
+  .progress-step.active::after {
+    background: #34a853;
+  }
+  .step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    z-index: 1;
+    transition: all 0.3s;
+  }
+  .progress-step.active .step-circle {
+    background: #0052d9;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(0,82,217,0.3);
+  }
+  .progress-step.completed .step-circle {
+    background: #34a853;
+    color: #fff;
+  }
+  .step-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .progress-step.active .step-label {
+    color: #fff;
+    font-weight: 500;
+  }
+  
+  /* 卡片样式 */
+  .card { 
+    background: #fff; 
+    border-radius: 16px; 
+    padding: 28px; 
+    margin-bottom: 20px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .card-title { 
+    font-size: 17px; 
+    color: #1a1a1a; 
+    font-weight: 600; 
+    margin-bottom: 24px; 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: #0052d9;
+    border-radius: 2px;
+  }
+  
+  /* 设备选择区域 */
+  .device-select-wrapper {
+    position: relative;
+  }
+  .device-select { 
+    width: 100%; 
+    padding: 14px 40px 14px 16px; 
+    border: 2px solid #e8e8e8; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    color: #333; 
+    background: #fafafa; 
+    appearance: none; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); 
+    background-repeat: no-repeat; 
+    background-position: right 16px center; 
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .device-select:focus { 
+    outline: none; 
+    border-color: #0052d9; 
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,82,217,0.1);
+  }
+  
+  /* 设备预览卡片 */
+  .device-preview {
+    background: linear-gradient(135deg, #f5f7ff 0%, #e8f0ff 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+    border: 1px solid #d4e0ff;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .device-preview.show {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .device-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .device-icon {
+    width: 48px;
+    height: 48px;
+    background: #0052d9;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .device-preview-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .device-preview-location {
+    font-size: 13px;
+    color: #666;
+    margin-top: 2px;
+  }
+  .device-preview-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+  }
+  .status-available {
+    background: #e6f7e6;
+    color: #1a6e2e;
+  }
+  .status-borrowed {
+    background: #fff0e6;
+    color: #a0522d;
+  }
+  
+  /* 表单样式 */
+  .form-group { 
+    margin-bottom: 20px; 
+  }
+  .form-group label { 
+    display: block; 
+    font-size: 14px; 
+    color: #333; 
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .form-group input, .form-group select { 
+    width: 100%; 
+    padding: 14px 16px; 
+    border: 2px solid #e8e8e8; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    color: #333; 
+    transition: all 0.3s;
+    background: #fafafa;
+  }
+  .form-group input:focus, .form-group select:focus { 
+    outline: none; 
+    border-color: #0052d9; 
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,82,217,0.1);
+  }
+  .form-group input::placeholder {
+    color: #aaa;
+  }
   .form-group.hidden { display: none; }
-  .btn { display: block; width: 100%; padding: 14px; background: #0052d9; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-  .btn:hover { background: #003d99; }
-  .btn:active { background: #002d7a; }
-  .tips { font-size: 12px; color: #999; margin-top: 12px; text-align: center; }
-  .success-msg { background: #e6f7e6; border: 1px solid #34a853; color: #1a6e2e; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  
+  /* 提交按钮 */
+  .btn { 
+    display: block; 
+    width: 100%; 
+    padding: 16px; 
+    background: linear-gradient(135deg, #0052d9 0%, #003d99 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 12px; 
+    font-size: 17px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0,82,217,0.3);
+    margin-top: 8px;
+  }
+  .btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,82,217,0.4);
+  }
+  .btn:active { 
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0,82,217,0.3);
+  }
+  .btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* 提示信息 */
+  .tips { 
+    font-size: 13px; 
+    color: #888; 
+    margin-top: 16px; 
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  /* 消息提示 */
+  .success-msg { 
+    background: #e6f7e6; 
+    border: 1px solid #34a853; 
+    color: #1a6e2e; 
+    padding: 16px; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    display: none; 
+    text-align: center;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
+  }
   .success-msg.show { display: block; }
-  .error-msg { background: #fff0e6; border: 1px solid #e67e22; color: #a0522d; padding: 14px 16px; border-radius: 10px; font-size: 15px; display: none; text-align: center; }
+  .error-msg { 
+    background: #fff0e6; 
+    border: 1px solid #e67e22; 
+    color: #a0522d; 
+    padding: 16px; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    display: none; 
+    text-align: center;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
+  }
   .error-msg.show { display: block; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
   /* 成功弹窗 */
-  .success-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
-  .success-modal.show { display: flex; }
-  .success-modal-content { background: #fff; border-radius: 16px; padding: 40px 32px; text-align: center; max-width: 320px; width: 85%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-  .success-modal-icon { font-size: 64px; margin-bottom: 16px; }
-  .success-modal-title { font-size: 20px; color: #1a6e2e; font-weight: 600; margin-bottom: 8px; }
-  .success-modal-text { font-size: 15px; color: #666; margin-bottom: 24px; }
-  .success-modal-btn { background: #34a853; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; padding: 14px 40px; cursor: pointer; width: 100%; }
-  .current-info { background: #e8f0ff; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #333; }
-  .current-info strong { color: #0052d9; }
-  .required-star { color: #e74c3c; margin-left: 2px; }
+  .success-modal { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    display: none; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+  }
+  .success-modal.show { 
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+  .success-modal-content { 
+    background: #fff; 
+    border-radius: 20px; 
+    padding: 48px 40px; 
+    text-align: center; 
+    max-width: 360px; 
+    width: 90%; 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .success-modal-icon { 
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #34a853 0%, #2d9147 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(52,168,83,0.3);
+    animation: checkmarkPop 0.5s ease 0.2s both;
+  }
+  @keyframes checkmarkPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .success-modal-title { 
+    font-size: 22px; 
+    color: #1a6e2e; 
+    font-weight: 600; 
+    margin-bottom: 12px; 
+  }
+  .success-modal-text { 
+    font-size: 15px; 
+    color: #666; 
+    margin-bottom: 28px; 
+    line-height: 1.6;
+  }
+  .success-modal-btn { 
+    background: linear-gradient(135deg, #34a853 0%, #2d9147 100%); 
+    color: #fff; 
+    border: none; 
+    border-radius: 12px; 
+    font-size: 16px; 
+    font-weight: 600; 
+    padding: 16px 40px; 
+    cursor: pointer; 
+    width: 100%;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(52,168,83,0.3);
+  }
+  .success-modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52,168,83,0.4);
+  }
+  
+  .required-star { 
+    color: #e74c3c; 
+    margin-left: 4px; 
+  }
+  
+  /* 页脚 */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+  }
+  
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 12px 16px;
+    }
+    .page-title {
+      font-size: 16px;
+    }
+    .main {
+      padding: 20px 16px;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 14px;
+    }
+    .progress-bar {
+      padding: 0 5px;
+    }
+    .step-label {
+      font-size: 11px;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>📱 设备借用登记</h1>
-    <p>请如实填写借用信息</p>
-  </div>
-
-  <div class="success-msg" id="successMsg">✅ 借用登记成功！请按时归还设备。</div>
-  <div class="error-msg" id="errorMsg"></div>
-
-  <!-- 成功弹窗 -->
-  <div class="success-modal" id="successModal">
-    <div class="success-modal-content">
-      <div class="success-modal-icon">✅</div>
-      <div class="success-modal-title">借用登记成功！</div>
-      <div class="success-modal-text">请按时归还设备</div>
-      <button type="button" class="success-modal-btn" onclick="closeSuccessModal()">我知道了</button>
+  <!-- 顶部导航栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="back-btn">← 返回首页</a>
+      <span class="page-title">📋 设备借用登记</span>
     </div>
-  </div>
+    <div class="topbar-right">请如实填写借用信息</div>
+  </header>
 
-  <div class="card">
-    <div class="card-title">借用信息</div>
-    <form id="borrowForm">
-      <!-- 设备编号（设备选择） -->
-      <div class="form-group" id="field-device_id">
-        <label id="label-device_id">设备编号<span class="required-star">*</span></label>
-        <select class="device-select" name="device_id" id="deviceSelect" required>
-          <option value="">— 请选择 —</option>
-          {% for dev in devices %}
-          <option value="{{ dev['设备编号'] }}" data-name="{{ dev['设备名称'] }}">{{ dev['设备名称'] }}（{% if dev['位置'] %}{{ dev['位置'] }}{% else %}位置未知{% endif %}）{% if dev['状态'] == '借用中' %} — 已被借用{% endif %}</option>
-          {% endfor %}
-        </select>
+  <main class="main">
+    <div class="container">
+      <!-- 进度指示器 -->
+      <div class="progress-bar">
+        <div class="progress-step active" id="step1">
+          <div class="step-circle">1</div>
+          <span class="step-label">选择设备</span>
+        </div>
+        <div class="progress-step" id="step2">
+          <div class="step-circle">2</div>
+          <span class="step-label">填写信息</span>
+        </div>
+        <div class="progress-step" id="step3">
+          <div class="step-circle">3</div>
+          <span class="step-label">确认提交</span>
+        </div>
       </div>
-      
-      <!-- 借用人 -->
-      <div class="form-group" id="field-borrower">
-        <label id="label-borrower">借用人<span class="required-star">*</span></label>
-        <input type="text" name="borrower" id="input-borrower" placeholder="请输入借用人姓名" required>
+
+      <div class="success-msg" id="successMsg">✅ 借用登记成功！请按时归还设备。</div>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- 成功弹窗 -->
+      <div class="success-modal" id="successModal">
+        <div class="success-modal-content">
+          <div class="success-modal-icon">✓</div>
+          <div class="success-modal-title">借用登记成功！</div>
+          <div class="success-modal-text">请妥善保管设备，按时归还<br>如有问题请联系管理员</div>
+          <button type="button" class="success-modal-btn" onclick="closeSuccessModal()">我知道了</button>
+        </div>
       </div>
-      
-      <!-- 部门 -->
-      <div class="form-group" id="field-dept">
-        <label id="label-dept">部门<span class="required-star">*</span></label>
-        <select name="dept" id="deptSelect" required>
-          <option value="">— 请选择部门 —</option>
-        </select>
+
+      <div class="card">
+        <div class="card-title">借用信息</div>
+        <form id="borrowForm">
+          <!-- 设备编号（设备选择） -->
+          <div class="form-group" id="field-device_id">
+            <label id="label-device_id">设备编号<span class="required-star">*</span></label>
+            <div class="device-select-wrapper">
+              <select class="device-select" name="device_id" id="deviceSelect" required onchange="onDeviceChange()">
+                <option value="">— 请选择设备 —</option>
+                {% for dev in devices %}
+                <option value="{{ dev['设备编号'] }}" data-name="{{ dev['设备名称'] }}" data-location="{{ dev['位置'] or '位置未知' }}" data-status="{{ dev['状态'] }}">{{ dev['设备名称'] }}（{% if dev['位置'] %}{{ dev['位置'] }}{% else %}位置未知{% endif %}）{% if dev['状态'] == '借用中' %} — 已被借用{% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <!-- 设备预览卡片 -->
+            <div class="device-preview" id="devicePreview">
+              <div class="device-preview-header">
+                <div class="device-icon">💻</div>
+                <div>
+                  <div class="device-preview-name" id="previewName">—</div>
+                  <div class="device-preview-location" id="previewLocation">—</div>
+                </div>
+              </div>
+              <span class="device-preview-status" id="previewStatus">—</span>
+            </div>
+          </div>
+          
+          <!-- 借用人 -->
+          <div class="form-group" id="field-borrower">
+            <label id="label-borrower">借用人<span class="required-star">*</span></label>
+            <input type="text" name="borrower" id="input-borrower" placeholder="请输入借用人姓名" required oninput="updateProgress()">
+          </div>
+          
+          <!-- 部门 -->
+          <div class="form-group" id="field-dept">
+            <label id="label-dept">部门<span class="required-star">*</span></label>
+            <select name="dept" id="deptSelect" required onchange="updateProgress()">
+              <option value="">— 请选择部门 —</option>
+            </select>
+          </div>
+          
+          <!-- 手机号 -->
+          <div class="form-group" id="field-phone">
+            <label id="label-phone">手机号<span class="required-star">*</span></label>
+            <input type="tel" name="phone" id="input-phone" placeholder="请输入11位手机号" required pattern="[0-9]{11}" maxlength="11" oninput="updateProgress()">
+          </div>
+          
+          <!-- 借用时间 -->
+          <div class="form-group" id="field-borrow_time">
+            <label id="label-borrow_time">借用时间<span class="required-star">*</span></label>
+            <input type="datetime-local" name="borrow_time" id="input-borrow_time" required onchange="updateProgress()">
+          </div>
+          
+          <!-- 预计归还 -->
+          <div class="form-group" id="field-return_time">
+            <label id="label-return_time">预计归还</label>
+            <input type="datetime-local" name="return_time" id="input-return_time" placeholder="选填，超过一天请填写">
+          </div>
+          
+          <!-- 备注 -->
+          <div class="form-group" id="field-note">
+            <label id="label-note">备注</label>
+            <input type="text" name="note" id="input-note" placeholder="选填，如借用用途">
+          </div>
+          
+          <input type="hidden" name="device_name" id="deviceName">
+          <button type="submit" class="btn" id="submitBtn">提交借用</button>
+        </form>
+        <div class="tips">
+          <span>ℹ️</span>
+          <span>提交后联系管理员确认借出</span>
+        </div>
       </div>
-      
-      <!-- 手机号 -->
-      <div class="form-group" id="field-phone">
-        <label id="label-phone">手机号<span class="required-star">*</span></label>
-        <input type="tel" name="phone" id="input-phone" placeholder="请输入手机号" required pattern="[0-9]{11}" maxlength="11">
-      </div>
-      
-      <!-- 借用时间 -->
-      <div class="form-group" id="field-borrow_time">
-        <label id="label-borrow_time">借用时间<span class="required-star">*</span></label>
-        <input type="datetime-local" name="borrow_time" id="input-borrow_time" required>
-      </div>
-      
-      <!-- 预计归还 -->
-      <div class="form-group" id="field-return_time">
-        <label id="label-return_time">预计归还</label>
-        <input type="datetime-local" name="return_time" id="input-return_time" placeholder="选填，超过一天请填写">
-      </div>
-      
-      <!-- 备注 -->
-      <div class="form-group" id="field-note">
-        <label id="label-note">备注</label>
-        <input type="text" name="note" id="input-note" placeholder="选填，如借用用途">
-      </div>
-      
-      <input type="hidden" name="device_name" id="deviceName">
-      <button type="submit" class="btn" id="submitBtn">提交借用</button>
-    </form>
-    <div class="tips">提交后联系管理员确认借出</div>
-  </div>
-</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>设备借用归还管理系统 V1.0 | 让设备管理更简单</p>
+  </footer>
 
 <script>
 // 字段配置
@@ -184,7 +659,102 @@ fetch('/api/field-configs/public?form_type=borrow')
     if (res.success && res.configs) {
       applyFieldConfigs(res.configs);
     }
+    // 设置借用时间为当前时间
+    setCurrentTime('input-borrow_time');
+    // 设置预计归还时间为明天
+    setTomorrowTime('input-return_time');
   });
+
+// 设置时间为当前时间
+function setCurrentTime(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) {
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var hours = String(now.getHours()).padStart(2, '0');
+    var minutes = String(now.getMinutes()).padStart(2, '0');
+    input.value = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+  }
+}
+
+// 设置时间为明天
+function setTomorrowTime(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) {
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var year = tomorrow.getFullYear();
+    var month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    var day = String(tomorrow.getDate()).padStart(2, '0');
+    var hours = '18';
+    var minutes = '00';
+    input.value = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+  }
+}
+
+// 设备选择变化时更新预览
+function onDeviceChange() {
+  var select = document.getElementById('deviceSelect');
+  var preview = document.getElementById('devicePreview');
+  var option = select.options[select.selectedIndex];
+  
+  if (select.value) {
+    document.getElementById('previewName').textContent = option.dataset.name || select.value;
+    document.getElementById('previewLocation').textContent = '📍 ' + (option.dataset.location || '位置未知');
+    var statusEl = document.getElementById('previewStatus');
+    if (option.dataset.status === '借用中') {
+      statusEl.textContent = '⚠️ 该设备当前已被借用';
+      statusEl.className = 'device-preview-status status-borrowed';
+    } else {
+      statusEl.textContent = '✓ 该设备当前可借用';
+      statusEl.className = 'device-preview-status status-available';
+    }
+    preview.classList.add('show');
+    updateProgress();
+  } else {
+    preview.classList.remove('show');
+  }
+}
+
+// 更新进度指示器
+function updateProgress() {
+  var deviceSelect = document.getElementById('deviceSelect');
+  var borrower = document.getElementById('input-borrower').value;
+  var dept = document.getElementById('deptSelect').value;
+  var phone = document.getElementById('input-phone').value;
+  var borrowTime = document.getElementById('input-borrow_time').value;
+  
+  // 步骤1：选择设备
+  if (deviceSelect.value) {
+    document.getElementById('step1').classList.add('completed');
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+  } else {
+    document.getElementById('step1').classList.add('active');
+    document.getElementById('step1').classList.remove('completed');
+    document.getElementById('step2').classList.remove('active', 'completed');
+  }
+  
+  // 步骤2：填写信息
+  var requiredFields = ['borrower', 'dept', 'phone', 'borrow_time'];
+  var filledCount = 0;
+  if (borrower) filledCount++;
+  if (dept) filledCount++;
+  if (phone && phone.length === 11) filledCount++;
+  if (borrowTime) filledCount++;
+  
+  if (filledCount >= 3 && deviceSelect.value) {
+    document.getElementById('step2').classList.add('completed');
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step3').classList.add('active');
+  } else if (deviceSelect.value) {
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('step2').classList.remove('completed');
+    document.getElementById('step3').classList.remove('active', 'completed');
+  }
+}
 
 // 表单提交
 document.getElementById('borrowForm').addEventListener('submit', async function(e) {
@@ -193,6 +763,11 @@ document.getElementById('borrowForm').addEventListener('submit', async function(
   var devSelect = document.getElementById('deviceSelect');
   document.getElementById('deviceName').value = devSelect.options[devSelect.selectedIndex].dataset.name || devSelect.value;
   var formData = new FormData(form);
+
+  // 禁用提交按钮
+  var submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '提交中...';
 
   try {
     var resp = await fetch('/api/submit-borrow', { 
@@ -206,6 +781,12 @@ document.getElementById('borrowForm').addEventListener('submit', async function(
       // 显示成功弹窗
       document.getElementById('successModal').classList.add('show');
       form.reset();
+      document.getElementById('devicePreview').classList.remove('show');
+      // 重置进度
+      document.querySelectorAll('.progress-step').forEach(function(step) {
+        step.classList.remove('completed');
+      });
+      document.getElementById('step1').classList.add('active');
       // 重新设置默认时间
       document.getElementById('input-borrow_time').value = new Date().toISOString().slice(0,16);
     } else {
@@ -216,6 +797,9 @@ document.getElementById('borrowForm').addEventListener('submit', async function(
   } catch(err) {
     document.getElementById('errorMsg').textContent = '提交失败，请检查网络';
     document.getElementById('errorMsg').classList.add('show');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '提交借用';
   }
 });
 

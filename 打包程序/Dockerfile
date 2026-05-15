@@ -12,7 +12,7 @@ COPY qrgen.py .
 COPY templates/ ./templates/
 
 # 数据目录（挂载点，不写死进镜像）
-RUN mkdir -p /app/data
+RUN mkdir -p /app/borrow_data
 
 EXPOSE 5000
 

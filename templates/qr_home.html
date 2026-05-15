@@ -3,30 +3,412 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>设备借用系统</title>
+<title>设备借用管理系统 - 扫码入口</title>
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-  .logo { font-size: 64px; margin-bottom: 20px; }
-  h1 { font-size: 22px; color: #1a1a1a; margin-bottom: 8px; text-align: center; }
-  p { font-size: 14px; color: #888; margin-bottom: 40px; text-align: center; }
-  .btn-row { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 320px; }
-  .btn { display: block; width: 100%; padding: 20px; border-radius: 14px; font-size: 17px; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; border: none; }
-  .btn-borrow { background: #0052d9; color: #fff; }
-  .btn-return { background: #34a853; color: #fff; }
-  .btn:hover { opacity: 0.9; }
-  .footer { margin-top: 40px; font-size: 12px; color: #aaa; text-align: center; }
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; 
+    background: #f5f7fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 顶部导航栏 */
+  .topbar {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .back-btn {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    transition: all 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .page-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  /* 主内容区 */
+  .main {
+    flex: 1;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Logo区域 */
+  .hero-section {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInDown 0.6s ease;
+  }
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .logo-container {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .logo-icon {
+    font-size: 56px;
+  }
+  .system-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+  .system-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.85);
+    max-width: 400px;
+    line-height: 1.6;
+  }
+  
+  /* 操作按钮区域 */
+  .actions-section {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 40px;
+  }
+  .btn-row { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 16px; 
+  }
+  .action-btn { 
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px; 
+    border-radius: 16px; 
+    font-size: 18px; 
+    font-weight: 600; 
+    text-decoration: none; 
+    cursor: pointer; 
+    border: none;
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    animation: slideUp 0.5s ease backwards;
+  }
+  .action-btn:nth-child(1) { animation-delay: 0.1s; }
+  .action-btn:nth-child(2) { animation-delay: 0.2s; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .action-btn:hover { 
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .action-btn:active {
+    transform: translateY(-2px);
+  }
+  .btn-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .btn-borrow { 
+    color: #0052d9; 
+  }
+  .btn-borrow .btn-icon {
+    background: linear-gradient(135deg, #e8f0ff 0%, #d4e0ff 100%);
+  }
+  .btn-return { 
+    color: #34a853; 
+  }
+  .btn-return .btn-icon {
+    background: linear-gradient(135deg, #e6f7e6 0%, #c8e6c9 100%);
+  }
+  .btn-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .btn-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .btn-desc {
+    font-size: 13px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+  
+  /* 使用步骤区域 */
+  .steps-section {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    animation: fadeIn 0.6s ease 0.3s both;
+  }
+  .steps-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .steps-list {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .step-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #e0e0e0 0%, #e0e0e0 100%);
+    z-index: 0;
+  }
+  .step-number {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0052d9 0%, #003d99 100%);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 auto 12px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 12px rgba(0,82,217,0.3);
+  }
+  .step-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+  }
+  .step-text strong {
+    display: block;
+    color: #333;
+    margin-bottom: 2px;
+    font-size: 14px;
+  }
+  
+  /* 底部信息 */
+  .footer {
+    text-align: center;
+    padding: 24px 20px;
+    color: rgba(255,255,255,0.7);
+  }
+  .footer-content {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .footer-content a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.3s;
+  }
+  .footer-content a:hover {
+    border-bottom-color: rgba(255,255,255,0.8);
+  }
+  .footer-divider {
+    margin: 0 8px;
+    opacity: 0.5;
+  }
+  
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 12px 16px;
+    }
+    .page-title {
+      font-size: 16px;
+    }
+    .main {
+      padding: 30px 16px;
+    }
+    .logo-container {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+    }
+    .logo-icon {
+      font-size: 44px;
+    }
+    .system-name {
+      font-size: 24px;
+    }
+    .system-desc {
+      font-size: 14px;
+    }
+    .action-btn {
+      padding: 20px;
+    }
+    .btn-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+    }
+    .steps-section {
+      padding: 20px;
+    }
+    .steps-list {
+      flex-direction: column;
+      gap: 20px;
+    }
+    .step-item:not(:last-child)::after {
+      display: none;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+    }
+    .step-number {
+      margin: 0;
+      flex-shrink: 0;
+    }
+  }
 </style>
 </head>
 <body>
-<div class="logo">🖥️</div>
-<h1>设备借用管理系统</h1>
-<p>请选择操作</p>
-<div class="btn-row">
-  <a href="/borrow" class="btn btn-borrow">📋 借用登记</a>
-  <a href="/return" class="btn btn-return">🔄 归还登记</a>
-</div>
-<div class="footer">如有问题请联系管理员</div>
+  <!-- 顶部导航栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="back-btn">← 返回首页</a>
+      <span class="page-title">📱 扫码快速入口</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Logo和系统介绍 -->
+    <section class="hero-section">
+      <div class="logo-container">
+        <span class="logo-icon">📦</span>
+      </div>
+      <h1 class="system-name">设备借用管理系统</h1>
+      <p class="system-desc">简化设备借用流程，实时追踪设备状态，让资产管理更轻松</p>
+    </section>
+
+    <!-- 操作按钮 -->
+    <section class="actions-section">
+      <div class="btn-row">
+        <a href="/borrow" class="action-btn btn-borrow">
+          <div class="btn-icon">📋</div>
+          <div class="btn-content">
+            <span class="btn-title">借用登记</span>
+            <span class="btn-desc">登记设备借用信息</span>
+          </div>
+        </a>
+        <a href="/return" class="action-btn btn-return">
+          <div class="btn-icon">🔄</div>
+          <div class="btn-content">
+            <span class="btn-title">归还登记</span>
+            <span class="btn-desc">登记设备归还信息</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- 使用步骤 -->
+    <section class="steps-section">
+      <div class="steps-title">
+        <span>📖</span>
+        <span>使用流程</span>
+      </div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-text">
+            <strong>选择操作</strong>
+            点击借用或归还按钮
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-text">
+            <strong>填写信息</strong>
+            选择设备并填写表单
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-text">
+            <strong>确认提交</strong>
+            完成登记等待确认
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 底部联系信息 -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>设备借用归还管理系统 V1.0</div>
+      <div>
+        <span>如遇问题请联系管理员</span>
+        <span class="footer-divider">|</span>
+        <a href="/admin/login">管理后台</a>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
